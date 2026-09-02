@@ -1,0 +1,4 @@
+export default function TrustScore({score}:{score:number}){
+ const radius=52, c=2*Math.PI*radius, offset=c-(score/100)*c;
+ return <div className="relative mx-auto h-40 w-40"><svg className="-rotate-90" width="160" height="160"><circle cx="80" cy="80" r={radius} fill="none" stroke="#1c2938" strokeWidth="10"/><circle cx="80" cy="80" r={radius} fill="none" stroke="currentColor" className={score<40?"text-red-400":score<70?"text-amber-400":"text-emerald-400"} strokeWidth="10" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={offset}/></svg><div className="absolute inset-0 flex flex-col items-center justify-center"><div className="text-4xl font-bold">{score}</div><div className="text-xs text-slate-400">/ 100</div></div></div>
+}

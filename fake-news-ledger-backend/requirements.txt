@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+sqlalchemy
+aiosqlite
+httpx
+beautifulsoup4
+python-dotenv
+openai
+web3
