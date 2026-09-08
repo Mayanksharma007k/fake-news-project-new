@@ -7,8 +7,16 @@ from app.routes.ledger import router as ledger_router
 app=FastAPI(title="Fake News Ledger API",version="1.0.0",
             description="AI evidence assessment with tamper-evident verification records.")
 
-app.add_middleware(CORSMiddleware,allow_origins=["http://localhost:3000"],
-                   allow_credentials=True,allow_methods=["*"],allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://fake-news-ledgerbymayank.vercel.app",
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 async def startup():
