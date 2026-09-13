@@ -22,8 +22,6 @@ async def record_verification(verification_id: str, content_hash: str):
             "data": data,
         }
 
-        if "gas" not in tx:
-            tx["gas"] = client.provider.estimate_gas(tx)
         tx_hash = client.signer.send_transaction(tx)
 
         if hasattr(tx_hash, "hex"):

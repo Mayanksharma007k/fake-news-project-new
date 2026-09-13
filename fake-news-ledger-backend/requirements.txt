@@ -8,3 +8,4 @@ beautifulsoup4
 python-dotenv
 openai
 web3
+mst-sdk-python==1.0.1

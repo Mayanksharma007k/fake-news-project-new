@@ -1,10 +1,170 @@
-import {ArrowUpRight, CheckCircle2, Clock3, ExternalLink, Link2, Users, XCircle} from "lucide-react"; import TrustScore from "@/components/TrustScore"; import StatusBadge from "@/components/StatusBadge"; import {verification as v} from "@/lib/mockData";
-export default function Results(){return <main className="container py-10"><div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><div className="text-sm text-slate-400">Verification {v.id}</div><h1 className="mt-2 text-3xl font-bold">Trust assessment</h1></div><StatusBadge status={v.status}/></div>
- <div className="grid gap-5 lg:grid-cols-[300px_1fr]"><div className="card p-6 text-center"><TrustScore score={v.trustScore}/><div className="mt-4 font-bold text-red-300">High risk</div><p className="muted mt-2 text-xs">Evidence-based assessment, not a guarantee of truth or falsehood.</p></div>
- <div className="space-y-5"><div className="card p-6"><div className="text-sm text-slate-400">Analyzed claim</div><p className="mt-3 text-xl font-semibold leading-8">{v.claim}</p><div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">{[["Evidence strength",v.evidenceStrength+"%"],["Source reliability",v.sourceReliability+"%"],["AI confidence",v.aiConfidence+"%"],["Community agreement",v.communityAgreement+"%"]].map(([a,b])=><div className="rounded-xl bg-slate-950 p-3" key={a}><div className="text-xs text-slate-500">{a}</div><div className="mt-1 font-bold">{b}</div></div>)}</div></div>
- <div className="card p-6"><div className="flex items-center gap-2 font-bold"><CheckCircle2 size={18}/> AI analysis</div><p className="muted mt-3 leading-7">{v.explanation}</p></div></div></div>
- <section className="mt-5 grid gap-5 lg:grid-cols-2"><div className="card p-6"><h2 className="text-xl font-bold">Evidence</h2><div className="mt-5 space-y-4">{v.evidence.map((e:any)=><div className="rounded-xl border border-slate-800 p-4" key={e.source}><div className="flex items-center justify-between gap-3"><span className={`text-xs font-bold ${e.type==="SUPPORTS"?"text-emerald-300":"text-red-300"}`}>{e.type==="SUPPORTS"?"✓ SUPPORTS CLAIM":"× CONTRADICTS CLAIM"}</span><span className="text-xs text-slate-500">{e.reliability}/100</span></div><div className="mt-3 font-semibold">{e.source}</div><p className="muted mt-2 text-sm leading-6">{e.text}</p><button className="mt-3 flex items-center gap-1 text-xs underline">View source <ArrowUpRight size={12}/></button></div>)}</div></div>
- <div className="card p-6"><h2 className="text-xl font-bold">Blockchain verification</h2><div className="mt-5 space-y-3">{[["Verification ID",v.id],["Content hash",v.hash],["Network",v.network],["Recorded",v.timestamp]].map(([a,b])=><div className="flex items-center justify-between gap-4 border-b border-slate-800 py-3 text-sm" key={a}><span className="text-slate-500">{a}</span><span className="font-medium">{b}</span></div>)}</div><div className="mt-5 flex items-center gap-2 rounded-xl bg-emerald-400/10 p-3 text-sm text-emerald-300"><Link2 size={16}/> Verification record preserved</div><button className="mt-4 flex items-center gap-2 text-sm underline">View on explorer <ExternalLink size={14}/></button></div></section>
- <section className="card mt-5 p-6"><h2 className="text-xl font-bold">Verification timeline</h2><div className="mt-5 grid gap-4 md:grid-cols-4">{["News submitted","AI analysis completed","Evidence collected","Blockchain record created"].map((x,i)=><div key={x} className="rounded-xl border border-slate-800 p-4"><div className="flex items-center gap-2 text-sm font-semibold">{i===3?<Link2 size={16}/>:<Clock3 size={16}/>} {x}</div><div className="muted mt-2 text-xs">01 Sep 2026</div></div>)}</div></section>
- <section className="card mt-5 p-6"><div className="flex items-center gap-2 font-bold"><Users size={18}/> Community assessment</div><div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-white" style={{width:v.communityAgreement+"%"}}/></div><div className="mt-3 text-sm"><b>{v.communityAgreement}%</b> agreement from 27 reviewers</div><div className="mt-5 flex gap-2"><button className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950">Agree</button><button className="rounded-xl border border-slate-700 px-4 py-2 text-sm">Disagree</button><button className="rounded-xl border border-slate-700 px-4 py-2 text-sm">Need evidence</button></div></section>
- </main>}
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { ExternalLink, Link2 } from "lucide-react";
+import TrustScore from "@/components/TrustScore";
+import StatusBadge from "@/components/StatusBadge";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
+export default function Results() {
+  const params = useParams();
+  const id = String(params.id);
+
+  const [v, setV] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch(`${API_URL}/api/verify/${encodeURIComponent(id)}`);
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok) {
+          throw new Error(data?.detail || `Verification not found [${res.status}]`);
+        }
+
+        setV(data);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Unable to load verification.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [id]);
+
+  if (loading) {
+    return <main className="container py-20 text-center">Loading verification...</main>;
+  }
+
+  if (error || !v) {
+    return (
+      <main className="container py-20 text-center">
+        <h1 className="text-3xl font-bold">Verification not found</h1>
+        <p className="muted mt-3">{error}</p>
+      </main>
+    );
+  }
+
+  const explorerUrl = v.transaction_hash
+    ? `https://testnet.mstscan.com/tx/${v.transaction_hash}`
+    : "";
+
+  return (
+    <main className="container py-10">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <div className="text-sm text-slate-400">Verification {v.id}</div>
+          <h1 className="mt-2 text-4xl font-bold">Trust assessment</h1>
+        </div>
+        <StatusBadge status={v.status} />
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
+        <div className="card p-8 flex items-center justify-center">
+          <TrustScore score={v.trust_score} />
+        </div>
+
+        <div className="card p-7">
+          <div className="text-sm text-slate-400">Analyzed claim</div>
+          <p className="mt-3 text-xl font-semibold">{v.claim}</p>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              ["Evidence strength", v.evidence_strength],
+              ["Source reliability", v.source_reliability],
+              ["AI confidence", v.ai_confidence],
+              ["Community agreement", v.community_agreement],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="rounded-xl bg-slate-950 p-4">
+                <div className="text-xs text-slate-400">{label}</div>
+                <div className="mt-2 text-xl font-bold">{value ?? 0}%</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <section className="card mt-5 p-7">
+        <h2 className="text-xl font-bold">AI analysis</h2>
+        <p className="muted mt-4 leading-7">{v.explanation}</p>
+      </section>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        <section className="card p-7">
+          <h2 className="text-xl font-bold">Evidence</h2>
+
+          <div className="mt-5 space-y-4">
+            {(v.evidence || []).map((e: any, index: number) => (
+              <div key={index} className="rounded-xl border border-slate-800 p-5">
+                <div className="flex justify-between gap-3">
+                  <span className="font-semibold">{e.type}</span>
+                  <span className="text-sm text-slate-400">
+                    {e.reliability}/100
+                  </span>
+                </div>
+                <div className="mt-3 font-medium">{e.source}</div>
+                <p className="muted mt-2">{e.text}</p>
+                {e.url && (
+                  <a
+                    href={e.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex items-center gap-2 text-sm underline"
+                  >
+                    View source <ExternalLink size={14} />
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="card p-7">
+          <h2 className="text-xl font-bold">Blockchain verification</h2>
+
+          <div className="mt-5 space-y-4">
+            {[
+              ["Verification ID", v.id],
+              ["Content hash", v.content_hash],
+              ["Network", v.blockchain_network],
+              ["Transaction hash", v.transaction_hash],
+            ].map(([label, value]) => (
+              <div
+                key={String(label)}
+                className="flex items-center justify-between gap-4 border-b border-slate-800 pb-3"
+              >
+                <span className="text-sm text-slate-400">{label}</span>
+                <span className="max-w-[65%] break-all text-right text-sm font-medium">
+                  {value || "Not available"}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {explorerUrl && (
+            <a
+              href={explorerUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-5 inline-flex items-center gap-2 underline"
+            >
+              <Link2 size={16} />
+              View on MST Explorer
+              <ExternalLink size={14} />
+            </a>
+          )}
+
+          <div className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-400/10 p-3 text-sm text-emerald-400">
+            <Link2 size={16} />
+            Verification record preserved on MST Testnet
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
